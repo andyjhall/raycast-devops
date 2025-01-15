@@ -39,7 +39,7 @@ export default () => {
                 icon: { source: Icon.Person }
               },
             ]}
-            keywords={[pullreq.title, pullreq.pullRequestId, pullreq.createdBy.displayName]}
+            keywords={[ pullreq.createdBy.displayName.split(" ")[0], pullreq.createdBy.displayName.split(" ")[1], pullreq.repository.name ]}
             actions={
               <ActionPanel>
                 <Action.OpenInBrowser title="Open in Browser" url={`${baseApiUrl()}/${pullreq.repository.project.name}/_git/${pullreq.repository.name}/pullrequest/${pullreq.pullRequestId}`} />
