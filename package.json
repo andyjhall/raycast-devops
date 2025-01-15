@@ -18,12 +18,14 @@
       "name": "search-ado-repos",
       "title": "Azure DevOps Repositories Search",
       "description": "Search and open Azure DevOps Repositories",
+      "alias": "devops",
       "mode": "view"
     },
     {
       "name": "search-ado-pullreq",
       "title": "Azure DevOps Pull Request Search",
       "description": "Search and open Azure DevOps Pull Requests",
+      "alias": "pull",
       "mode": "view"
     }
   ],
