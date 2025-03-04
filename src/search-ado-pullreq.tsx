@@ -36,11 +36,9 @@ export default () => {
   // Extract search type and term
   const searchMatch = query.match(/^!(id|title|repo|user)\s+(.+)/i);
   const searchType = searchMatch?.[1]?.toLowerCase();
-  const searchTerm = searchMatch?.[2]?.toLowerCase();
+  const searchTerm = searchMatch?.[2]?.toLowerCase() ?? query; 
 
   const filteredPRs = data?.value.filter((pullreq) => {
-    if (!searchType || !searchTerm) return true; 
-
     switch (searchType) {
       case "id":
         return pullreq.pullRequestId.toString().includes(searchTerm);
@@ -51,7 +49,7 @@ export default () => {
       case "user":
         return pullreq.createdBy.displayName.toLowerCase().includes(searchTerm);
       default:
-        return true;
+        return pullreq.pullRequestId.toString().includes(searchTerm) || pullreq.title.toLowerCase().includes(searchTerm) || pullreq.repository.name.toLowerCase().includes(searchTerm) || pullreq.createdBy.displayName.toLowerCase().includes(searchTerm);
     }
   });
 
