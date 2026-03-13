@@ -23,20 +23,20 @@ const getPullRequestIcon = (pullreq: PullRequest) => {
   return { source: "pull-request-open-unread.svg", tintColor: Color.Purple };
 };
 
+const getPullRequestUrl = (pullreq: PullRequest) =>
+  `${baseApiUrl()}/${pullreq.repository.project.name}/_git/${pullreq.repository.name}/pullrequest/${pullreq.pullRequestId}`;
+
 export default () => {
-  const { data, isLoading } = useFetch<AdoPrResponse>(
-    `${baseApiUrl()}/_apis/git/pullrequests?api-version=6.0`,
-    {
-      headers: { Accept: "application/json", Authorization: `Basic ${preparedPersonalAccessToken()}` },
-    }
-  );
+  const { data, isLoading } = useFetch<AdoPrResponse>(`${baseApiUrl()}/_apis/git/pullrequests?api-version=6.0`, {
+    headers: { Accept: "application/json", Authorization: `Basic ${preparedPersonalAccessToken()}` },
+  });
 
   const [query, setQuery] = useState("");
 
   // Extract search type and term
   const searchMatch = query.match(/^!(id|title|repo|user)\s+(.+)/i);
   const searchType = searchMatch?.[1]?.toLowerCase();
-  const searchTerm = searchMatch?.[2]?.toLowerCase() ?? query; 
+  const searchTerm = searchMatch?.[2]?.toLowerCase() ?? query;
 
   const filteredPRs = data?.value.filter((pullreq) => {
     switch (searchType) {
@@ -49,7 +49,12 @@ export default () => {
       case "user":
         return pullreq.createdBy.displayName.toLowerCase().includes(searchTerm);
       default:
-        return pullreq.pullRequestId.toString().includes(searchTerm) || pullreq.title.toLowerCase().includes(searchTerm) || pullreq.repository.name.toLowerCase().includes(searchTerm) || pullreq.createdBy.displayName.toLowerCase().includes(searchTerm);
+        return (
+          pullreq.pullRequestId.toString().includes(searchTerm) ||
+          pullreq.title.toLowerCase().includes(searchTerm) ||
+          pullreq.repository.name.toLowerCase().includes(searchTerm) ||
+          pullreq.createdBy.displayName.toLowerCase().includes(searchTerm)
+        );
     }
   });
 
@@ -74,9 +79,12 @@ export default () => {
           ]}
           actions={
             <ActionPanel>
-              <Action.OpenInBrowser
-                title="Open in Browser"
-                url={`${baseApiUrl()}/${pullreq.repository.project.name}/_git/${pullreq.repository.name}/pullrequest/${pullreq.pullRequestId}`}
+              <Action.OpenInBrowser title="Open in Browser" url={getPullRequestUrl(pullreq)} />
+              <Action.CopyToClipboard
+                title="Copy Pull Request URL"
+                content={getPullRequestUrl(pullreq)}
+                icon={Icon.CopyClipboard}
+                shortcut={{ modifiers: ["cmd"], key: "." }}
               />
             </ActionPanel>
           }

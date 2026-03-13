@@ -25,6 +25,12 @@ export default () => {
               <ActionPanel>
                 <Action.OpenInBrowser title="Open in Browser" url={repository.webUrl} />
                 <Action.CopyToClipboard
+                  title="Copy Repository URL"
+                  content={repository.webUrl}
+                  icon={Icon.CopyClipboard}
+                  shortcut={{ modifiers: ["cmd"], key: "." }}
+                />
+                <Action.CopyToClipboard
                   title="Copy Git SSH URL"
                   content={repository.sshUrl}
                   icon={Icon.CodeBlock}
