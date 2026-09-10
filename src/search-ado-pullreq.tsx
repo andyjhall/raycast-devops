@@ -1,8 +1,8 @@
 import { Action, ActionPanel, List, Icon, Color } from "@raycast/api";
-import { useFetch } from "@raycast/utils";
+import { useCachedPromise, useFetch } from "@raycast/utils";
 import { preparedPersonalAccessToken, baseApiUrl } from "./preferences";
 import { AdoPrResponse, AdoPrThreadsResponse, PullRequest } from "./types";
-import { useEffect, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 const getPullRequestIcon = (pullreq: PullRequest) => {
   if (pullreq.isDraft) {
@@ -39,29 +39,24 @@ const getPullRequestSortOrder = (pullreq: PullRequest) => {
 };
 
 export default () => {
-  const headers = { Accept: "application/json", Authorization: `Basic ${preparedPersonalAccessToken()}` };
+  const headers = useMemo(
+    () => ({ Accept: "application/json", Authorization: `Basic ${preparedPersonalAccessToken()}` }),
+    [],
+  );
   const { data, isLoading } = useFetch<AdoPrResponse>(`${baseApiUrl()}/_apis/git/pullrequests?api-version=6.0`, {
     headers,
   });
 
   const [query, setQuery] = useState("");
-  const [pullRequestsWithActiveComments, setPullRequestsWithActiveComments] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function fetchActiveCommentThreads() {
-      if (!data?.value.length) {
-        setPullRequestsWithActiveComments({});
-        return;
-      }
-
-      const pullRequestActiveCommentEntries = await Promise.all(
-        data.value.map(async (pullreq) => {
+  const abortable = useRef<AbortController | null>(null);
+  const { data: pullRequestsWithActiveComments = {} } = useCachedPromise(
+    async (pullRequests: PullRequest[], requestHeaders: HeadersInit) => {
+      const entries = await Promise.all(
+        pullRequests.map(async (pullreq) => {
           try {
             const response = await fetch(
               `${baseApiUrl()}/${pullreq.repository.project.name}/_apis/git/repositories/${pullreq.repository.id}/pullRequests/${pullreq.pullRequestId}/threads?api-version=7.1`,
-              { headers },
+              { headers: requestHeaders, signal: abortable.current?.signal },
             );
 
             if (!response.ok) {
@@ -69,7 +64,6 @@ export default () => {
             }
 
             const threadData = (await response.json()) as AdoPrThreadsResponse;
-
             return [
               pullreq.pullRequestId,
               threadData.value.some((thread) => !thread.isDeleted && thread.status === "active"),
@@ -80,17 +74,11 @@ export default () => {
         }),
       );
 
-      if (!isCancelled) {
-        setPullRequestsWithActiveComments(Object.fromEntries(pullRequestActiveCommentEntries));
-      }
-    }
-
-    fetchActiveCommentThreads();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [data]);
+      return Object.fromEntries(entries);
+    },
+    [data?.value ?? [], headers],
+    { initialData: {}, abortable },
+  );
 
   // Extract search type and term
   const searchMatch = query.match(/^!(id|title|repo|user)\s+(.+)/i);
