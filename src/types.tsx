@@ -10,6 +10,10 @@ export type AdoPrResponse = {
   value: PullRequest[];
 };
 
+export type AdoPrThreadsResponse = {
+  value: PullRequestThread[];
+};
+
 export type Repository = {
   id: string;
   name: string;
@@ -59,4 +63,10 @@ export type Reviewer = {
   displayName: string;
   imageUrl: string;
   vote: number;
+};
+
+export type PullRequestThread = {
+  id: number;
+  status: string;
+  isDeleted: boolean;
 };
